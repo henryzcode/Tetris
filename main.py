@@ -13,7 +13,7 @@ pygame.key.set_repeat(150, 50)
 
 screen_dimension = pygame.display.get_desktop_sizes()[0]
 icon = pygame.image.load("assets/logo.ico")
-win = pygame.display.set_mode(screen_dimension, pygame.DOUBLEBUF) # pygame.FULLSCREEN |
+win = pygame.display.set_mode(screen_dimension, pygame.DOUBLEBUF | pygame.FULLSCREEN)
 pygame.display.set_caption("Tetris", "Tetris")
 pygame.display.set_icon(icon)
 font = pygame.font.Font("assets/anybody.ttf", 50)
