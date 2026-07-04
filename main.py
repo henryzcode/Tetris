@@ -27,11 +27,7 @@ pygame.key.set_repeat(150, 50)
 
 screen_dimension = pygame.display.get_desktop_sizes()[0]
 icon = pygame.image.load("assets/logo.ico")
-<<<<<<< HEAD
 win = pygame.display.set_mode(screen_dimension, pygame.DOUBLEBUF)
-=======
-win = pygame.display.set_mode(screen_dimension, pygame.DOUBLEBUF | pygame.FULLSCREEN)
->>>>>>> 2300165282f43006830a27ff4ad94473aa6cd339
 pygame.display.set_caption("Tetris", "Tetris")
 pygame.display.set_icon(icon)
 font = pygame.font.Font("assets/anybody.ttf", 50)
@@ -335,7 +331,7 @@ while running:
     input_state = {
         "LEFT": keys[pygame.K_LEFT] or keys[pygame.K_a] or hat_x == -1 or joy_actions.get("LEFT", False),
         "RIGHT": keys[pygame.K_RIGHT] or keys[pygame.K_d] or hat_x == 1 or joy_actions.get("RIGHT", False),
-        "DOWN": keys[pygame.K_DOWN] or keys[pygame.K_s] or hat_y == -1 or joy_actions.get("SOFT_DROP", False)
+        "DOWN": keys[pygame.K_DOWN] or keys[pygame.K_s] or hat_y == 1 or joy_actions.get("SOFT_DROP", False)
     }
 
     current_time_ms = pygame.time.get_ticks()
