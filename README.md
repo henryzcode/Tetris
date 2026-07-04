@@ -1,15 +1,15 @@
-# 🧱 Tetris Python
+# Tetris Python
 
 ![Python Version](https://img.shields.io/badge/Python-3.13-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-> **A classic Tetris clone built in Python using Pygame, featuring multiple music tracks and scoring.**
+> **A classic Tetris clone built in Python using Pygame and PyQt6.**
 
 <img width="3839" height="2159" alt="image" src="https://github.com/user-attachments/assets/a7dd40a4-064c-4a44-aa74-84a1f5dc7a3e" />
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 ### 1. Running the source code
   Make sure you have Python installed. You will also need the required libraries.
@@ -20,6 +20,19 @@ In the working directory run
   ```bash
   python main.py
   ```
+
+## How to use the joy config
+> Only for controllers
+
+<img width="1209" height="1097" alt="image" src="https://github.com/user-attachments/assets/05f242fb-cbb8-491c-a3a5-f0884683260a" />
+
+### 1. run `joy_config.py`
+* Click on the action and press `assign selected`
+* Press a button, d-pad or move a axis to assign
+  > Note: You can assign combo keys by pressing multiple keys in key assigning (e.g. `key 10` and `key 11` have to be press together to trigger rotation)
+* Select the action and press clear to delete keys
+
+---
 
 ### 2. Running the release
   Go to [release](https://github.com/henryzcode/Tetris/releases) and download the latest release of Tetris
@@ -34,4 +47,5 @@ In the working directory run
   2. Go to the Apple menu in the top-left corner and click System Settings.
   3. Scroll down the left sidebar and click on Privacy & Security.
   4. Scroll to the very bottom of the right window to find a security section.
-  5. Click the Open Anyway button next to the name of the app you are trying to launch.Enter your Mac’s administrator password to confirm.
+  5. Click the Open Anyway button next to the name of the app you are trying to launch.
+  6. Enter your Mac’s administrator password to confirm.
