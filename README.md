@@ -14,12 +14,18 @@
 ### 1. Running the source code
   Make sure you have Python installed. You will also need the required libraries.
   ```bash
-  pip install pygame
+  pip install pygame PyQt6
   ```
 In the working directory run
   ```bash
   python main.py
   ```
+> If you have a controller, run:
+```bash
+  python joy_config.py
+```
+
+---
 
 ## How to use the joy config
 > Only for controllers
