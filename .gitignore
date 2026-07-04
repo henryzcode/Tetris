@@ -6,3 +6,8 @@ __pycache__/
 build/
 dist/
 *.spec
+.tmp.drivedownload/
+.tmp.driveupload/
+joy_map.json
+log.jsonl
+testjoy.py
