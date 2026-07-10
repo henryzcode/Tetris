@@ -27,12 +27,12 @@ pygame.key.set_repeat(150, 50)
 
 screen_dimension = pygame.display.get_desktop_sizes()[0]
 icon = pygame.image.load("assets/logo.ico")
-win = pygame.display.set_mode(screen_dimension, pygame.DOUBLEBUF)
+win = pygame.display.set_mode(screen_dimension, pygame.DOUBLEBUF | pygame.NOFRAME)
 pygame.display.set_caption("Tetris", "Tetris")
 pygame.display.set_icon(icon)
-font = pygame.font.Font("assets/anybody.ttf", 50)
+font = pygame.font.Font("assets/pixel.ttf", 50)
 
-cursor_img = pygame.image.load("assets/cursor.png").convert_alpha()
+cursor_img = pygame.transform.smoothscale_by(pygame.image.load("assets/cursor.png").convert_alpha(), (0.5, 0.5))
 cursor = pygame.cursors.Cursor((0, 0), cursor_img)
 pygame.mouse.set_cursor(cursor)
 
@@ -44,7 +44,6 @@ MUSICS = [
     "assets/music/liquid glass.mp3",
     "assets/music/phrase break.mp3",
     "assets/music/shipwrecked.mp3",
-    "assets/music/thalassophobia.mp3",
 ]
 
 log_time = time.asctime()
@@ -119,13 +118,17 @@ def generate_piece(x_pos):
     shape = random.choice(list(entities.TETROMINOES.keys()))
     return entities.Tetromino(x_pos, 0, shape)
 
-def volume(change):
+def play_sound(sound, vol=None):
+    final_volume = vol if vol is not None else volume_level
+    sound.set_volume(final_volume)
+    sound.play()
+
+def volume(change=0.0, set_volume=None):
     global volume_level
     volume_level = max(0.0, min(1.0, volume_level + change))
+    if set_volume:
+        volume_level = set_volume
     pygame.mixer.music.set_volume(volume_level)
-    for sound in landed:
-        sound.set_volume(volume_level)
-    clear.set_volume(volume_level)
 
 loaded_tiles = entities.load_and_scale_tiles(grid_size, grid_size)
 locked_blocks = {} 
@@ -176,7 +179,10 @@ def clear_lines(locked):
             row -= 1 
             
     if lines_cleared_this_turn > 0:
-        clear.play()
+        play_sound(clear, volume_level / 0.8)
+        if is_joy and joystick:
+            joystick.rumble(0.4, 0.5, 200)
+
     return locked, lines_cleared_this_turn
 
 def cal_bottom(piece, locked):
@@ -201,7 +207,7 @@ def log(lines, playtime):
     with open("log.jsonl", "a") as f:
         f.write(json.dumps(info) + "\n")
 
-fall_time = 120
+fall_time = 60
 save_time = 10000
 
 pygame.time.set_timer(FALL_EVENT, fall_time)
@@ -212,6 +218,8 @@ total_lines_cleared = 0
 space_pressed = False
 rotation_pressed = False
 
+menu_k_down = False
+
 DAS = 130
 ARR = 20
 active_dirs = {"LEFT": False, "RIGHT": False, "DOWN": False}
@@ -220,9 +228,15 @@ last_move_time = {"LEFT": 0, "RIGHT": 0, "DOWN": 0}
 
 play_music()
 
+paused = False
+pause_bg = pygame.transform.scale(pygame.image.load("assets/black.png"), screen_dimension)
+pause_bg.set_alpha(180)
+
+
 while running:
     current_time_sec = pygame.time.get_ticks() / 1000
-    win.fill("#000074")
+    win.fill((1, 10, 65))
+
     pygame.draw.rect(win, "#000000", play_area_r)
     win.blit(grid_surf, (play_area_x, play_area_y))
 
@@ -280,131 +294,152 @@ while running:
             play_music()
 
         if event.type == FALL_EVENT:
-            current_piece.y += 1
-            if not valid_position(current_piece, locked_blocks):
-                current_piece.y -= 1
-                matrix = current_piece.get_matrix()
-                for r_idx, row in enumerate(matrix):
-                    for c_idx, cell in enumerate(row):
-                        if cell == 1:
-                            locked_blocks[(current_piece.x + c_idx, current_piece.y + r_idx)] = current_piece.color
-                
-                locked_blocks, cleared = clear_lines(locked_blocks)
-                total_lines_cleared += cleared
-
-                current_piece = next_piece
-                current_piece.x = (play_area_columns // 2) - 2
-                next_piece = generate_piece(0)
-                needs_ghost_update = True
-                random.choice(landed).play()
-
+            if not paused:
+                current_piece.y += 1
                 if not valid_position(current_piece, locked_blocks):
-                    if is_joy and joystick:
-                        joystick.rumble(0.5, 0.5, 1500)
-                    locked_blocks = {} 
-                    total_lines_cleared = 0 
+                    current_piece.y -= 1
+                    matrix = current_piece.get_matrix()
+                    for r_idx, row in enumerate(matrix):
+                        for c_idx, cell in enumerate(row):
+                            if cell == 1:
+                                locked_blocks[(current_piece.x + c_idx, current_piece.y + r_idx)] = current_piece.color
+                
+                    locked_blocks, cleared = clear_lines(locked_blocks)
+                    total_lines_cleared += cleared
+
+                    current_piece = next_piece
+                    current_piece.x = (play_area_columns // 2) - 2
+                    next_piece = generate_piece(0)
                     needs_ghost_update = True
+                    play_sound(random.choice(landed), volume_level * 0.5)
+
+                    if not valid_position(current_piece, locked_blocks):
+                        if is_joy and joystick:
+                            joystick.rumble(0.9, 0.2, 600)
+                        locked_blocks = {} 
+                        total_lines_cleared = 0 
+                        needs_ghost_update = True
             
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if not menu_k_down:
+                        paused = not paused
+                        menu_k_down = True
+                        if paused:
+                            pygame.mixer.music.set_volume(volume_level * 0.5)
+                        else:
+                            pygame.mixer.music.set_volume(volume_level)
+            
+            if event.key == pygame.K_DELETE:
                 running = False
             if event.key == pygame.K_q:
                 volume(-0.03)
             if event.key == pygame.K_e:
                 volume(0.03)
+            if event.key == pygame.K_DELETE:
+                running = False
+            if event.key == pygame.K_q:
+                volume(-0.03)
+            if event.key == pygame.K_e:
+                volume(0.03)
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_ESCAPE:
+                menu_k_down = False
+    
+    if not paused:
+        keys = pygame.key.get_pressed()
 
-    keys = pygame.key.get_pressed()
+        if not keys[pygame.K_SPACE] and not joy_actions.get("HARD_DROP", False):
+            space_pressed = False
+        if not (keys[pygame.K_UP] or keys[pygame.K_w]) and not joy_actions.get("ROTATE", False):
+            rotation_pressed = False
 
-    if not keys[pygame.K_SPACE] and not joy_actions.get("HARD_DROP", False):
-        space_pressed = False
-    if not (keys[pygame.K_UP] or keys[pygame.K_w]) and not joy_actions.get("ROTATE", False):
-        rotation_pressed = False
-
-    if (keys[pygame.K_UP] or keys[pygame.K_w] or joy_actions.get("ROTATE", False)) and not rotation_pressed:
-        rotation_pressed = True
-        current_piece.rotate(1)
-        if not valid_position(current_piece, locked_blocks):
-            current_piece.rotate(-1)
-        else:
-            needs_ghost_update = True
-
-    input_state = {
-        "LEFT": keys[pygame.K_LEFT] or keys[pygame.K_a] or hat_x == -1 or joy_actions.get("LEFT", False),
-        "RIGHT": keys[pygame.K_RIGHT] or keys[pygame.K_d] or hat_x == 1 or joy_actions.get("RIGHT", False),
-        "DOWN": keys[pygame.K_DOWN] or keys[pygame.K_s] or hat_y == 1 or joy_actions.get("SOFT_DROP", False)
-    }
-
-    current_time_ms = pygame.time.get_ticks()
-
-    for direction in ["LEFT", "RIGHT", "DOWN"]:
-        move_this_frame = False
-
-        if input_state[direction]:
-            if not active_dirs[direction]:
-                active_dirs[direction] = True
-                das_triggered[direction] = False
-                last_move_time[direction] = current_time_ms
-                move_this_frame = True
+        if (keys[pygame.K_UP] or keys[pygame.K_w] or joy_actions.get("ROTATE", False)) and not rotation_pressed:
+            rotation_pressed = True
+            current_piece.rotate(1)
+            if not valid_position(current_piece, locked_blocks):
+                current_piece.rotate(-1)
             else:
-                time_held = current_time_ms - last_move_time[direction]
-                if not das_triggered[direction] and time_held >= DAS:
-                    das_triggered[direction] = True
-                    last_move_time[direction] = current_time_ms
-                    move_this_frame = True
-                elif das_triggered[direction] and time_held >= ARR:
-                    last_move_time[direction] = current_time_ms
-                    move_this_frame = True
-        else:
-            active_dirs[direction] = False
-            das_triggered[direction] = False
+                needs_ghost_update = True
 
-        if move_this_frame:
-            if direction == "LEFT":
-                current_piece.x -= 1
-                if not valid_position(current_piece, locked_blocks): 
-                    current_piece.x += 1
+        input_state = {
+            "LEFT": keys[pygame.K_LEFT] or keys[pygame.K_a] or hat_x == -1 or joy_actions.get("LEFT", False),
+            "RIGHT": keys[pygame.K_RIGHT] or keys[pygame.K_d] or hat_x == 1 or joy_actions.get("RIGHT", False),
+            "DOWN": keys[pygame.K_DOWN] or keys[pygame.K_s] or hat_y == 1 or joy_actions.get("SOFT_DROP", False)
+        }
+
+        current_time_ms = pygame.time.get_ticks()
+
+        for direction in ["LEFT", "RIGHT", "DOWN"]:
+            move_this_frame = False
+
+            if input_state[direction]:
+                if not active_dirs[direction]:
+                    active_dirs[direction] = True
+                    das_triggered[direction] = False
+                    last_move_time[direction] = current_time_ms
+                    move_this_frame = True
                 else:
-                    needs_ghost_update = True
-            elif direction == "RIGHT":
-                current_piece.x += 1
-                if not valid_position(current_piece, locked_blocks): 
+                    time_held = current_time_ms - last_move_time[direction]
+                    if not das_triggered[direction] and time_held >= DAS:
+                        das_triggered[direction] = True
+                        last_move_time[direction] = current_time_ms
+                        move_this_frame = True
+                    elif das_triggered[direction] and time_held >= ARR:
+                        last_move_time[direction] = current_time_ms
+                        move_this_frame = True
+            else:
+                active_dirs[direction] = False
+                das_triggered[direction] = False
+
+            if move_this_frame:
+                if direction == "LEFT":
                     current_piece.x -= 1
-                else:
-                    needs_ghost_update = True
-            elif direction == "DOWN":
+                    if not valid_position(current_piece, locked_blocks): 
+                        current_piece.x += 1
+                    else:
+                        needs_ghost_update = True
+                elif direction == "RIGHT":
+                    current_piece.x += 1
+                    if not valid_position(current_piece, locked_blocks): 
+                        current_piece.x -= 1
+                    else:
+                        needs_ghost_update = True
+                elif direction == "DOWN":
+                    current_piece.y += 1
+                    if not valid_position(current_piece, locked_blocks): 
+                        current_piece.y -= 1
+
+        if (keys[pygame.K_SPACE] or joy_actions.get("HARD_DROP", False)) and not space_pressed:
+            space_pressed = True
+            while valid_position(current_piece, locked_blocks):
                 current_piece.y += 1
-                if not valid_position(current_piece, locked_blocks): 
-                    current_piece.y -= 1
-
-    if (keys[pygame.K_SPACE] or joy_actions.get("HARD_DROP", False)) and not space_pressed:
-        space_pressed = True
-        while valid_position(current_piece, locked_blocks):
-            current_piece.y += 1
-        current_piece.y -= 1
-        
-        matrix = current_piece.get_matrix()
-        for r_idx, row in enumerate(matrix):
-            for c_idx, cell in enumerate(row):
-                if cell == 1:
-                    locked_blocks[(current_piece.x + c_idx, current_piece.y + r_idx)] = current_piece.color
-        
-        locked_blocks, cleared = clear_lines(locked_blocks)
-        total_lines_cleared += cleared
-        
-        current_piece = next_piece
-        current_piece.x = (play_area_columns // 2) - 2
-        next_piece = generate_piece(0)
-        needs_ghost_update = True
-        
-        if not valid_position(current_piece, locked_blocks):
-            locked_blocks = {}
-            total_lines_cleared = 0
+            current_piece.y -= 1
+            
+            matrix = current_piece.get_matrix()
+            for r_idx, row in enumerate(matrix):
+                for c_idx, cell in enumerate(row):
+                    if cell == 1:
+                        locked_blocks[(current_piece.x + c_idx, current_piece.y + r_idx)] = current_piece.color
+            
+            locked_blocks, cleared = clear_lines(locked_blocks)
+            total_lines_cleared += cleared
+            
+            current_piece = next_piece
+            current_piece.x = (play_area_columns // 2) - 2
+            next_piece = generate_piece(0)
             needs_ghost_update = True
-        random.choice(landed).play()
+            
+            if not valid_position(current_piece, locked_blocks):
+                locked_blocks = {}
+                total_lines_cleared = 0
+                needs_ghost_update = True
+            play_sound(random.choice(landed), volume_level * 0.5)
 
-    if needs_ghost_update:
-        ghost_y = cal_bottom(current_piece, locked_blocks)
-        needs_ghost_update = False
+        if needs_ghost_update:
+            ghost_y = cal_bottom(current_piece, locked_blocks)
+            needs_ghost_update = False
 
     for (lock_x, lock_y), color in locked_blocks.items():
         tile_image = loaded_tiles[color]
@@ -425,6 +460,9 @@ while running:
     win.blit(lbl_title, (10, 10))
     entities.render_txt(font, win, f"Landed: {len(locked_blocks) // 4}", "#ffffff", 10, 70) 
     entities.render_txt(font, win, f"Lines cleared: {total_lines_cleared}", "#ffffff", 10, 130)
+
+    if paused:
+        win.blit(pause_bg, (0, 0))
 
     pygame.display.flip()
     clock.tick(60)
