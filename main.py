@@ -111,7 +111,7 @@ for current_y in range(0, int(play_area_height) + 1, grid_size):
 for current_x in range(0, int(play_area_width) + 1, grid_size):
     pygame.draw.line(grid_surf, "#1f1f1f", (current_x, 0), (current_x, play_area_height), 2)
 
-lbl_title = font.render("Tetris 3.0", True, "#ffffff")
+lbl_title = font.render("Tetris 3.2", True, "#ffffff")
 lbl_next = font.render("Next:", True, "#ffffff")
 
 def generate_piece(x_pos):
