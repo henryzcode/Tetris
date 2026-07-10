@@ -54,4 +54,8 @@ In the working directory run
   3. Scroll down the left sidebar and click on Privacy & Security.
   4. Scroll to the very bottom of the right window to find a security section.
   5. Click the Open Anyway button next to the name of the app you are trying to launch.
+<<<<<<< HEAD
   6. Enter your Mac’s administrator password to confirm.
+=======
+  6. Enter your Mac’s administrator password to confirm.
+>>>>>>> a7b10f93c4e345f3b7ade4d26e19e80a861b6e24
