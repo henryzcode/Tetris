@@ -5,6 +5,10 @@
 
 > **A classic Tetris clone built in Python using Pygame and PyQt6.**
 
+> **Notice: Tetris will not be updated anymore, try C-Tetris with wall kick and other functions, C-Tetris will be updated regularly!**
+
+~~No new updates for Tetris python anymore~~
+
 <img width="3839" height="2159" alt="image" src="https://github.com/user-attachments/assets/a7dd40a4-064c-4a44-aa74-84a1f5dc7a3e" />
 
 ---
